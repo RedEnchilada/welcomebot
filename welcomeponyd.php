@@ -142,6 +142,7 @@ postNotice('I live! I LIVE! Mwahahahaha *cackles evilly*');
 while(!System_Daemon::isDying()) {
     $posts = getTimeline();
 	$lastCachedId = $lastNoticeId;
+	$currentReadIndex = array();
 	foreach($posts as $post) {
 		// Store the ID so we don't reparse notices we've already seen
 		if($post->id > $lastNoticeId)
@@ -168,8 +169,13 @@ while(!System_Daemon::isDying()) {
 			$newUser = true;
 		}
 		
+		// Count how many notices from this user we've seen this loop
+		if(!isset($currentReadIndex[$post->user->id]))
+			$currentReadIndex[$post->user->id] = 0;
+		$currentReadIndex[$post->user->id]++;
+		
 		// Send a welcome if they have only one notice
-		if($post->user->statuses_count == 1 && $newUser) {
+		if($post->user->statuses_count == $currentReadIndex[$post->user->id] && $newUser) {
 			System_Daemon::info('new user found: %s', $post->user->screen_name);
 			postNotice(getMessage($post->user->screen_name), $post->id);
 			continue;
